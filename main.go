@@ -132,14 +132,14 @@ func newTextView(text string) tview.Primitive {
 func readConfig(path string) (config []CmdConfig) {
 	cfgfile, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Panic("Error reading config: ", err.Error())
+		log.Fatal("Error reading config: ", err.Error())
 	}
 
 	cfg := make(ConfigMap)
 
 	err = yaml.Unmarshal(cfgfile, &cfg)
 	if err != nil {
-		log.Panic("Error parsing config: ", err.Error())
+		log.Fatal("Error parsing config: ", err.Error())
 	}
 
 	sortedkeys := make([]string, 0, len(cfg))
@@ -185,13 +185,13 @@ func main() {
 		if replay {
 			logfile, err = os.Open(logFileName)
 			if err != nil {
-				log.Panic("Could not open logfile: ", err.Error())
+				log.Fatal("Could not open logfile: ", err.Error())
 			}
 			logreader = gob.NewDecoder(logfile)
 		} else {
 			logfile, err = os.Create(logFileName)
 			if err != nil {
-				log.Panic("Could not create logfile: ", err.Error())
+				log.Fatal("Could not create logfile: ", err.Error())
 			}
 			logwriter = gob.NewEncoder(logfile)
 		}
