@@ -77,6 +77,8 @@ func replayLog(decoder *gob.Decoder, realtime bool, output chan LogEntry) {
 
 		output <- entry
 	}
+
+	close(output)
 }
 
 func runCmd(ctx context.Context, cmd CmdConfig, col int, output chan LogEntry) {
@@ -297,8 +299,12 @@ func main() {
 				}
 			}
 
-			app.Draw()
+			if !replay || realtime {
+				app.Draw()
+			}
 		}
+
+		app.Draw()
 	}()
 
 	// Fire up the tview event loop
