@@ -166,8 +166,8 @@ func main() {
 	var replay bool
 	var realtime bool
 
-	flag.StringVar(&configFileName, "config", "./config.yaml", "Config file to use")
-	flag.StringVar(&logFileName, "logfile", "", "Log file to write to")
+	flag.StringVar(&configFileName, "config", "./logunify.yaml", "Config file to use")
+	flag.StringVar(&logFileName, "logfile", "./logunify.log", "Log file to write to")
 	flag.BoolVar(&replay, "replay", false, "Replay a stored log file")
 	flag.BoolVar(&realtime, "realtime", false, "Replay a stored log file in real time")
 
