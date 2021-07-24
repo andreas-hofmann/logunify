@@ -20,8 +20,8 @@ type CmdConfig struct {
 	Params ConfigParameters
 }
 
-func ReadConfig(path string) (config []CmdConfig) {
-	cfgfile, err := ioutil.ReadFile(path)
+func ReadConfig(flags Flags) (config []CmdConfig) {
+	cfgfile, err := ioutil.ReadFile(flags.ConfigFileName)
 	if err != nil {
 		log.Fatal("Error reading config: ", err.Error())
 	}

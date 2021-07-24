@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/gob"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -23,33 +21,8 @@ func main() {
 	// First off, parse command line arguments
 	flags := ParseFlags()
 
-	cfg := ReadConfig(flags.ConfigFileName)
-	logChan := make(chan LogEntry)
-
-	var logfile *os.File = nil
-	var logwriter *gob.Encoder = nil
-	var logreader *gob.Decoder = nil
-
-	// Set up a log writer, if a logfile is given
-	if len(flags.LogFileName) > 0 {
-		var err error
-
-		if flags.Replay {
-			logfile, err = os.Open(flags.LogFileName)
-			if err != nil {
-				log.Fatal("Could not open logfile: ", err.Error())
-			}
-			logreader = gob.NewDecoder(logfile)
-		} else {
-			logfile, err = os.Create(flags.LogFileName)
-			if err != nil {
-				log.Fatal("Could not create logfile: ", err.Error())
-			}
-			logwriter = gob.NewEncoder(logfile)
-		}
-
-		defer logfile.Close()
-	}
+	cfg := ReadConfig(flags)
+	logging := InitLog(flags)
 
 	// Set up a context, to allwo terminating background processes
 	ctx := context.Background()
@@ -75,15 +48,13 @@ func main() {
 		grid.AddItem(p, 1, col, 1, 1, 0, 0, false)
 
 		if !flags.Replay {
-			go RunCmd(ctx, c, col, logChan)
+			go RunCmd(ctx, c, col, logging.channel)
 		}
 
 		col++
 	}
 
-	if flags.Replay {
-		go ReplayLog(logreader, flags.Realtime, logChan)
-	}
+	logging.Replay()
 
 	// Add timestamp + header in first column
 	timeview := newTextView("")
@@ -123,10 +94,8 @@ func main() {
 
 	// Receive log data in the background and send it to logfile + views
 	go func() {
-		for l := range logChan {
-			if logwriter != nil {
-				logwriter.Encode(l)
-			}
+		for l := range logging.channel {
+			logging.Write(l)
 
 			lines := strings.Split(strings.TrimRight(l.Text, "\n"), "\n")
 			for linenr, line := range lines {
