@@ -3,126 +3,14 @@ package main
 import (
 	"context"
 	"encoding/gob"
-	"flag"
-	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"gopkg.in/yaml.v3"
 )
-
-type ConfigParameters struct {
-	Loop       bool  `yaml:"loop"`
-	IntervalMs int64 `yaml:"intervalMs"`
-}
-
-type ConfigMap map[string]ConfigParameters
-
-type CmdConfig struct {
-	Cmd    string
-	Params ConfigParameters
-}
-
-type LogEntry struct {
-	Ts   time.Time
-	Col  int
-	Text string
-}
-
-func getShell() []string {
-	shells := [][]string{
-		{"/bin/bash", "-c"},
-		{"/bin/sh", "-c"},
-		{"/system/bin/sh", "-c"},
-		{"/vendor/bin/sh", "-c"},
-	}
-
-	for _, sh := range shells {
-		if _, err := os.Stat(sh[0]); os.IsNotExist(err) {
-			continue
-		}
-		return sh
-	}
-
-	log.Panic("No suitable shell found!")
-	return []string{}
-}
-
-func replayLog(decoder *gob.Decoder, realtime bool, output chan LogEntry) {
-	var lastTime time.Time
-	initialized := false
-
-	for {
-		var entry LogEntry
-
-		if err := decoder.Decode(&entry); err != nil {
-			break
-		}
-
-		if realtime {
-			if !initialized {
-				initialized = true
-				lastTime = entry.Ts
-			} else {
-				time.Sleep(entry.Ts.Sub(lastTime))
-				lastTime = entry.Ts
-			}
-		}
-
-		output <- entry
-	}
-
-	close(output)
-}
-
-func runCmd(ctx context.Context, cmd CmdConfig, col int, output chan LogEntry) {
-	var executable []string
-	executable = append(executable, getShell()...)
-	executable = append(executable, cmd.Cmd)
-
-	for {
-		c := exec.CommandContext(ctx, executable[0], executable[1:]...)
-
-		o, e := c.StdoutPipe()
-		if e != nil {
-			output <- LogEntry{time.Now(), col, "[ Error starting " + cmd.Cmd + ": " + e.Error() + " ]"}
-		}
-
-		if err := c.Start(); err != nil {
-			output <- LogEntry{time.Now(), col, "[ Error starting " + cmd.Cmd + ": " + err.Error() + " ]"}
-			continue
-		}
-
-		data := make([]byte, 4096, 4096)
-
-		for {
-			n, err := o.Read(data)
-			if n <= 0 {
-				break
-			}
-
-			if err == nil {
-				output <- LogEntry{time.Now(), col, string(data[0:n])}
-			}
-		}
-
-		c.Wait()
-
-		if !cmd.Params.Loop {
-			break
-		}
-
-		if cmd.Params.IntervalMs > 0 {
-			time.Sleep(time.Duration(cmd.Params.IntervalMs * 1_000_000))
-		}
-	}
-}
 
 func newTextView(text string) tview.Primitive {
 	return tview.NewTextView().
@@ -131,49 +19,11 @@ func newTextView(text string) tview.Primitive {
 		SetWrap(false)
 }
 
-func readConfig(path string) (config []CmdConfig) {
-	cfgfile, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal("Error reading config: ", err.Error())
-	}
-
-	cfg := make(ConfigMap)
-
-	err = yaml.Unmarshal(cfgfile, &cfg)
-	if err != nil {
-		log.Fatal("Error parsing config: ", err.Error())
-	}
-
-	sortedkeys := make([]string, 0, len(cfg))
-
-	for k := range cfg {
-		sortedkeys = append(sortedkeys, k)
-	}
-
-	sort.Strings(sortedkeys)
-
-	for _, k := range sortedkeys {
-		config = append(config, CmdConfig{k, cfg[k]})
-	}
-
-	return config
-}
-
 func main() {
 	// First off, parse command line arguments
-	var configFileName string
-	var logFileName string
-	var replay bool
-	var realtime bool
+	flags := ParseFlags()
 
-	flag.StringVar(&configFileName, "config", "./logunify.yaml", "Config file to use")
-	flag.StringVar(&logFileName, "logfile", "./logunify.log", "Log file to write to")
-	flag.BoolVar(&replay, "replay", false, "Replay a stored log file")
-	flag.BoolVar(&realtime, "realtime", false, "Replay a stored log file in real time")
-
-	flag.Parse()
-
-	cfg := readConfig(configFileName)
+	cfg := ReadConfig(flags.ConfigFileName)
 	logChan := make(chan LogEntry)
 
 	var logfile *os.File = nil
@@ -181,17 +31,17 @@ func main() {
 	var logreader *gob.Decoder = nil
 
 	// Set up a log writer, if a logfile is given
-	if len(logFileName) > 0 {
+	if len(flags.LogFileName) > 0 {
 		var err error
 
-		if replay {
-			logfile, err = os.Open(logFileName)
+		if flags.Replay {
+			logfile, err = os.Open(flags.LogFileName)
 			if err != nil {
 				log.Fatal("Could not open logfile: ", err.Error())
 			}
 			logreader = gob.NewDecoder(logfile)
 		} else {
-			logfile, err = os.Create(logFileName)
+			logfile, err = os.Create(flags.LogFileName)
 			if err != nil {
 				log.Fatal("Could not create logfile: ", err.Error())
 			}
@@ -224,15 +74,15 @@ func main() {
 		primitives = append(primitives, p)
 		grid.AddItem(p, 1, col, 1, 1, 0, 0, false)
 
-		if !replay {
-			go runCmd(ctx, c, col, logChan)
+		if !flags.Replay {
+			go RunCmd(ctx, c, col, logChan)
 		}
 
 		col++
 	}
 
-	if replay {
-		go replayLog(logreader, realtime, logChan)
+	if flags.Replay {
+		go ReplayLog(logreader, flags.Realtime, logChan)
 	}
 
 	// Add timestamp + header in first column
@@ -299,7 +149,7 @@ func main() {
 				}
 			}
 
-			if !replay || realtime {
+			if !flags.Replay || flags.Realtime {
 				app.Draw()
 			}
 		}
