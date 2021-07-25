@@ -2,12 +2,15 @@ package main
 
 import (
 	"log"
+	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 type TUI struct {
+	app        *tview.Application
 	grid       *tview.Grid
 	primitives []tview.Primitive
 	tview      *tview.TextView
@@ -78,5 +81,41 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 		tv.SetInputCapture(inputwrapper)
 	}
 
+	tui.app = tview.NewApplication().SetRoot(tui.grid, true).EnableMouse(false)
+
 	return tui
+}
+
+func (t TUI) AddData(data LogEntry) {
+	lines := strings.Split(strings.TrimRight(data.Text, "\n"), "\n")
+	for linenr, line := range lines {
+		for c, p := range t.primitives {
+			tv, ok := p.(*tview.TextView)
+			if !ok {
+				log.Panic("Can't convert TV")
+			}
+			if (c + 1) == data.Col {
+				tv.Write([]byte(line + "\n"))
+			} else {
+				tv.Write([]byte("\n"))
+			}
+		}
+
+		if linenr == 0 {
+			t.tview.Write([]byte(data.Ts.Format(time.Stamp) + "\n"))
+		} else {
+			t.tview.Write([]byte("\n"))
+		}
+	}
+}
+
+func (t TUI) Update() {
+	t.app.Draw()
+}
+
+func (t TUI) Run() {
+	// Fire up the tview event loop
+	if err := t.app.Run(); err != nil {
+		log.Panic(err)
+	}
 }
