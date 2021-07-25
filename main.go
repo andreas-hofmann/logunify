@@ -7,41 +7,42 @@ import (
 func main() {
 	// First off, parse command line arguments
 	flags := ParseFlags()
-
 	cfg := ReadConfig(flags)
 	logging := InitLog(flags)
+	defer logging.Close()
 
 	// Set up a context, to allwo terminating background processes
 	ctx := context.Background()
 	defer ctx.Done()
 
-	var tui UI
-	tui = InitTUI(flags, cfg)
+	var ui UI
 
-	col := 1
-	for _, c := range cfg {
-		if !flags.Replay {
+	ui = InitTUI(flags, cfg)
+
+	if !flags.Replay {
+		col := 1
+		for _, c := range cfg {
 			go RunCmd(ctx, c, col, logging.channel)
+			col++
 		}
-		col++
+	} else {
+		logging.Replay()
 	}
-
-	logging.Replay()
 
 	// Receive log data in the background and send it to logfile + views
 	go func() {
 		for l := range logging.channel {
 			logging.Write(l)
 
-			tui.AddData(l)
+			ui.AddData(l)
 
 			if !flags.Replay || flags.Realtime {
-				tui.Update()
+				ui.Update()
 			}
 		}
 
-		tui.Update()
+		ui.Update()
 	}()
 
-	tui.Run()
+	ui.Run()
 }
