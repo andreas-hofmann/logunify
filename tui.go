@@ -87,25 +87,25 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 }
 
 func (t TUI) AddData(data LogEntry) {
-	lines := strings.Split(strings.TrimRight(data.Text, "\n"), "\n")
-	for linenr, line := range lines {
-		for c, p := range t.primitives {
-			tv, ok := p.(*tview.TextView)
-			if !ok {
-				log.Panic("Can't convert TV")
-			}
-			if (c + 1) == data.Col {
-				tv.Write([]byte(line + "\n"))
-			} else {
+	newlines := strings.Count(data.Text, "\n")
+
+	for c, p := range t.primitives {
+		tv, ok := p.(*tview.TextView)
+		if !ok {
+			log.Panic("Can't convert TV")
+		}
+		if (c + 1) == data.Col {
+			tv.Write([]byte(data.Text))
+		} else {
+			for i := 0; i < newlines; i++ {
 				tv.Write([]byte("\n"))
 			}
 		}
+	}
 
-		if linenr == 0 {
-			t.tview.Write([]byte(data.Ts.Format(time.Stamp) + "\n"))
-		} else {
-			t.tview.Write([]byte("\n"))
-		}
+	t.tview.Write([]byte(data.Ts.Format(time.Stamp)))
+	for i := 0; i < newlines; i++ {
+		t.tview.Write([]byte("\n"))
 	}
 }
 
