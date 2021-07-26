@@ -87,7 +87,11 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 }
 
 func (t TUI) AddData(data LogEntry) {
-	newlines := strings.Count(data.Text, "\n")
+	newlines := ""
+
+	for i := 0; i < strings.Count(data.Text, "\n"); i++ {
+		newlines += "\n"
+	}
 
 	for c, p := range t.primitives {
 		tv, ok := p.(*tview.TextView)
@@ -97,16 +101,12 @@ func (t TUI) AddData(data LogEntry) {
 		if (c + 1) == data.Col {
 			tv.Write([]byte(data.Text))
 		} else {
-			for i := 0; i < newlines; i++ {
-				tv.Write([]byte("\n"))
-			}
+			tv.Write([]byte(newlines))
 		}
 	}
 
 	t.tview.Write([]byte(data.Ts.Format(time.Stamp)))
-	for i := 0; i < newlines; i++ {
-		t.tview.Write([]byte("\n"))
-	}
+	t.tview.Write([]byte(newlines))
 }
 
 func (t TUI) Update() {
