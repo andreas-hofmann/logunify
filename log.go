@@ -55,6 +55,7 @@ func (l *Log) Replay() {
 
 			l.channel <- entry
 		}
+		close(l.channel)
 	}()
 }
 
