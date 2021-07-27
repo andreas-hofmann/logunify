@@ -26,7 +26,7 @@ func main() {
 			col++
 		}
 	} else {
-		logging.Replay()
+		logging.Replay(flags.Realtime)
 	}
 
 	// Receive log data in the background and send it to logfile + views

@@ -14,11 +14,10 @@ type LogEntry struct {
 }
 
 type Log struct {
-	file     *os.File
-	writer   *gob.Encoder
-	reader   *gob.Decoder
-	channel  chan LogEntry
-	realtime bool
+	handle  *os.File
+	writer  *gob.Encoder
+	reader  *gob.Decoder
+	channel chan LogEntry
 }
 
 func (l *Log) Write(entry LogEntry) {
@@ -27,7 +26,7 @@ func (l *Log) Write(entry LogEntry) {
 	}
 }
 
-func (l *Log) Replay() {
+func (l *Log) Replay(realtime bool) {
 	if l.reader == nil {
 		return
 	}
@@ -43,7 +42,7 @@ func (l *Log) Replay() {
 				break
 			}
 
-			if l.realtime {
+			if realtime {
 				if !initialized {
 					initialized = true
 					lastTime = entry.Ts
@@ -60,31 +59,30 @@ func (l *Log) Replay() {
 }
 
 func (l *Log) Close() {
-	l.file.Close()
+	l.handle.Close()
 }
 
 func InitLog(flags Flags) Log {
 	var l Log
 
 	l.channel = make(chan LogEntry)
-	l.realtime = flags.Realtime
 
 	// Set up a log writer, if a logfile is given
 	if len(flags.LogFileName) > 0 {
 		var err error
 
 		if flags.Replay {
-			l.file, err = os.Open(flags.LogFileName)
+			l.handle, err = os.Open(flags.LogFileName)
 			if err != nil {
 				log.Fatal("Could not open logfile: ", err.Error())
 			}
-			l.reader = gob.NewDecoder(l.file)
+			l.reader = gob.NewDecoder(l.handle)
 		} else {
-			l.file, err = os.Create(flags.LogFileName)
+			l.handle, err = os.Create(flags.LogFileName)
 			if err != nil {
 				log.Fatal("Could not create logfile: ", err.Error())
 			}
-			l.writer = gob.NewEncoder(l.file)
+			l.writer = gob.NewEncoder(l.handle)
 		}
 	}
 
