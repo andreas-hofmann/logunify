@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"io"
 	"log"
+	"net"
 	"os"
 	"time"
 )
@@ -59,23 +60,58 @@ func (l *Log) Replay(ch chan LogEntry, realtime bool) {
 }
 
 func (l *Log) Close() {
-	l.handle.Close()
+	if l.handle != nil {
+		l.handle.Close()
+	}
 }
 
-func InitLogfile(filename string) Log {
-	var l Log
-
-	// Set up a log writer, if a logfile is given
-	if len(filename) > 0 {
-		var err error
-
-		l.handle, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
-		if err != nil {
-			log.Fatal("Could not open logfile: ", err.Error())
-		}
-		l.reader = gob.NewDecoder(l.handle)
-		l.writer = gob.NewEncoder(l.handle)
+func NewLogFile(filename string, write bool) (l Log) {
+	if len(filename) <= 0 {
+		return
 	}
 
-	return l
+	var err error
+
+	l.handle, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatal("Could not open logfile: ", err.Error())
+	}
+
+	if write {
+		l.writer = gob.NewEncoder(l.handle)
+	} else {
+		l.reader = gob.NewDecoder(l.handle)
+	}
+
+	return
+}
+
+func NewLogRemote(peer string, write bool) (l Log) {
+	if len(peer) <= 0 {
+		return
+	}
+
+	var err error
+
+	if write {
+		l.handle, err = net.Dial("tcp", peer)
+		if err == nil {
+			l.writer = gob.NewEncoder(l.handle)
+		}
+	} else {
+		conn, err := net.Listen("tcp", peer)
+		if err != nil {
+			log.Fatal("Could not listen for connections: ", err.Error())
+		}
+
+		log.Println("Listening for connections...")
+
+		l.handle, err = conn.Accept()
+		if err != nil {
+			log.Fatal("Error accepting connection: ", err.Error())
+		}
+		l.reader = gob.NewDecoder(l.handle)
+	}
+
+	return
 }
