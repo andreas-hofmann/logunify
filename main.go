@@ -8,7 +8,7 @@ func main() {
 	// First off, parse command line arguments
 	flags := ParseFlags()
 	cfg := ReadConfig(flags)
-	logging := InitLog(flags)
+	logging := InitLogfile(flags.LogFileName)
 	defer logging.Close()
 
 	// Set up a context, to allwo terminating background processes
@@ -19,20 +19,24 @@ func main() {
 
 	ui = InitTUI(flags, cfg)
 
+	logchan := make(chan LogEntry)
+
 	if !flags.Replay {
 		col := 1
 		for _, c := range cfg {
-			go RunCmd(ctx, c, col, logging.channel)
+			go RunCmd(ctx, c, col, logchan)
 			col++
 		}
 	} else {
-		logging.Replay(flags.Realtime)
+		logging.Replay(logchan, flags.Realtime)
 	}
 
 	// Receive log data in the background and send it to logfile + views
 	go func() {
-		for l := range logging.channel {
-			logging.Write(l)
+		for l := range logchan {
+			if !flags.Replay {
+				logging.Write(l)
+			}
 
 			ui.AddData(l)
 

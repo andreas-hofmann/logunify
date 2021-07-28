@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -14,10 +15,9 @@ type LogEntry struct {
 }
 
 type Log struct {
-	handle  *os.File
-	writer  *gob.Encoder
-	reader  *gob.Decoder
-	channel chan LogEntry
+	handle io.ReadWriteCloser
+	writer *gob.Encoder
+	reader *gob.Decoder
 }
 
 func (l *Log) Write(entry LogEntry) {
@@ -26,7 +26,7 @@ func (l *Log) Write(entry LogEntry) {
 	}
 }
 
-func (l *Log) Replay(realtime bool) {
+func (l *Log) Replay(ch chan LogEntry, realtime bool) {
 	if l.reader == nil {
 		return
 	}
@@ -52,9 +52,9 @@ func (l *Log) Replay(realtime bool) {
 				}
 			}
 
-			l.channel <- entry
+			ch <- entry
 		}
-		close(l.channel)
+		close(ch)
 	}()
 }
 
@@ -62,28 +62,19 @@ func (l *Log) Close() {
 	l.handle.Close()
 }
 
-func InitLog(flags Flags) Log {
+func InitLogfile(filename string) Log {
 	var l Log
 
-	l.channel = make(chan LogEntry)
-
 	// Set up a log writer, if a logfile is given
-	if len(flags.LogFileName) > 0 {
+	if len(filename) > 0 {
 		var err error
 
-		if flags.Replay {
-			l.handle, err = os.Open(flags.LogFileName)
-			if err != nil {
-				log.Fatal("Could not open logfile: ", err.Error())
-			}
-			l.reader = gob.NewDecoder(l.handle)
-		} else {
-			l.handle, err = os.Create(flags.LogFileName)
-			if err != nil {
-				log.Fatal("Could not create logfile: ", err.Error())
-			}
-			l.writer = gob.NewEncoder(l.handle)
+		l.handle, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatal("Could not open logfile: ", err.Error())
 		}
+		l.reader = gob.NewDecoder(l.handle)
+		l.writer = gob.NewEncoder(l.handle)
 	}
 
 	return l
