@@ -8,15 +8,6 @@ Available config parameters:
  - `loop: [true|false]` -> Run the command in an endless loop.
  - `intervalMs: <milliseconds>` -> Interval between looped command executions.
 
-Availble commandline arguments:
-
-    -config string
-          Config file to use (default "./config.yaml")
-    -logfile string
-          Log file to write to
-    -realtime
-          Replay a stored log file in real time
-    -replay
-          Replay a stored log file
+You only need the yaml config when running commands. For replaying, a logfile is sufficient. If your device is short on storage space, sending out the log data over a TCP connection is supported, too.
 
 This was created from the need to gather debugging info on an Android system, but should work on Linux as well (or any system with /bin/bash or /bin/sh, for that matter). To cross compile it, simply export `GOOS=android` and `GOARCH=arm` (or arm64) before running `go build`.
