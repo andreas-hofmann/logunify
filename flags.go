@@ -27,7 +27,7 @@ func ParseFlags() Flags {
 	var printversion bool
 
 	flag.StringVar(&f.ConfigFileName, "config", "./logunify.yaml", "Config file to use.")
-	flag.StringVar(&f.LogFileName, "logfile", "logunify.log", "Log file to write to.")
+	flag.StringVar(&f.LogFileName, "logfile", "", "Log file to write to.")
 	flag.BoolVar(&f.Replay, "replay", false, "Replay a stored log file.")
 	flag.BoolVar(&f.Realtime, "realtime", false, "Replay in real time (including pauses).")
 	flag.BoolVar(&f.Listen, "listen", false, "Listen to incoming connections. Format: [addr]:<port>")
@@ -52,7 +52,6 @@ func ParseFlags() Flags {
 	}
 
 	if f.Listen {
-		f.LogFileName = ""
 		f.Replay = true
 		f.Realtime = true
 		connect = true
