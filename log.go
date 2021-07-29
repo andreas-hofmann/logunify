@@ -15,21 +15,13 @@ type LogEntry struct {
 	Text string
 }
 
-type Log struct {
+type DataLog struct {
 	handle io.ReadWriteCloser
 	writer *gob.Encoder
 	reader *gob.Decoder
 }
 
-func (l *Log) Write(entry LogEntry) {
-	if l.writer == nil {
-		return
-	}
-
-	l.writer.Encode(entry)
-}
-
-func (l *Log) WriteCfg(cfg []CmdConfig) {
+func (l DataLog) WriteCfg(cfg []CmdConfig) {
 	if l.writer == nil {
 		return
 	}
@@ -39,7 +31,7 @@ func (l *Log) WriteCfg(cfg []CmdConfig) {
 	}
 }
 
-func (l *Log) ReadCfg() (cfg []CmdConfig) {
+func (l DataLog) ReadCfg() (cfg []CmdConfig) {
 	if l.reader == nil {
 		return cfg
 	}
@@ -55,7 +47,15 @@ func (l *Log) ReadCfg() (cfg []CmdConfig) {
 	return cfg
 }
 
-func (l *Log) Replay(ch chan LogEntry, realtime bool) {
+func (l DataLog) Write(entry LogEntry) {
+	if l.writer == nil {
+		return
+	}
+
+	l.writer.Encode(entry)
+}
+
+func (l DataLog) Replay(ch chan LogEntry, realtime bool) {
 	if l.reader == nil {
 		return
 	}
@@ -87,13 +87,13 @@ func (l *Log) Replay(ch chan LogEntry, realtime bool) {
 	}()
 }
 
-func (l *Log) Close() {
+func (l DataLog) Close() {
 	if l.handle != nil {
 		l.handle.Close()
 	}
 }
 
-func NewLogFile(filename string, write bool) (l Log) {
+func NewLogFile(filename string, write bool) (l DataLog) {
 	if len(filename) <= 0 {
 		return
 	}
@@ -114,7 +114,7 @@ func NewLogFile(filename string, write bool) (l Log) {
 	return
 }
 
-func NewLogRemote(peer string, write bool) (l Log) {
+func NewLogRemote(peer string, write bool) (l DataLog) {
 	if len(peer) <= 0 {
 		return
 	}
