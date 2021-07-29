@@ -22,9 +22,37 @@ type Log struct {
 }
 
 func (l *Log) Write(entry LogEntry) {
-	if l.writer != nil {
-		l.writer.Encode(entry)
+	if l.writer == nil {
+		return
 	}
+
+	l.writer.Encode(entry)
+}
+
+func (l *Log) WriteCfg(cfg []CmdConfig) {
+	if l.writer == nil {
+		return
+	}
+
+	for _, c := range cfg {
+		l.writer.Encode(c)
+	}
+}
+
+func (l *Log) ReadCfg() (cfg []CmdConfig) {
+	if l.reader == nil {
+		return cfg
+	}
+
+	for {
+		var c CmdConfig
+		if err := l.reader.Decode(&c); err != nil {
+			break
+		}
+		cfg = append(cfg, c)
+	}
+
+	return cfg
 }
 
 func (l *Log) Replay(ch chan LogEntry, realtime bool) {

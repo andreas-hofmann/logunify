@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"log"
 )
 
 func main() {
 	// First off, parse command line arguments
 	flags := ParseFlags()
-	cfg := ReadConfig(flags)
 
 	logging := NewLogFile(flags.LogFileName, !flags.Replay)
 	defer logging.Close()
@@ -19,13 +19,27 @@ func main() {
 	ctx := context.Background()
 	defer ctx.Done()
 
-	var ui UI
+	// Try to read cmd config from all available channels.
+	cfg := logging.ReadCfg()
+	if len(cfg) == 0 {
+		cfg = remote.ReadCfg()
+	}
+	if len(cfg) == 0 {
+		cfg = ReadConfig(flags)
+	}
+	if len(cfg) == 0 {
+		log.Fatal("Could not read cmd-config!")
+	}
 
-	ui = InitTUI(flags, cfg)
+	ui := InitTUI(flags, cfg)
 
 	logchan := make(chan LogEntry)
 
 	if !flags.Replay {
+		// We're not replaying. Write out the config, before starting anything else.
+		logging.WriteCfg(cfg)
+		remote.WriteCfg(cfg)
+
 		col := 1
 		for _, c := range cfg {
 			go RunCmd(ctx, c, col, logchan)
