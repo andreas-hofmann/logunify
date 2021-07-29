@@ -122,14 +122,20 @@ func NewLogRemote(peer string, write bool) (l DataLog) {
 	var err error
 
 	if write {
-		l.handle, err = net.Dial("tcp", peer)
-		if err == nil {
-			l.writer = gob.NewEncoder(l.handle)
+		log.Println("Connecting to", peer)
+		for {
+			l.handle, err = net.Dial("tcp", peer)
+			if err == nil {
+				l.writer = gob.NewEncoder(l.handle)
+				break
+			}
+			time.Sleep(time.Second * 2)
+			log.Println("Retrying connection:", err)
 		}
 	} else {
 		conn, err := net.Listen("tcp", peer)
 		if err != nil {
-			log.Fatal("Could not listen for connections: ", err.Error())
+			log.Fatal("Could not listen for connections:", err.Error())
 		}
 
 		log.Println("Listening for connections...")
