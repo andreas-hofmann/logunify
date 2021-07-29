@@ -26,16 +26,16 @@ func ParseFlags() Flags {
 	var port int
 	var printversion bool
 
-	flag.StringVar(&f.ConfigFileName, "config", "./logunify.yaml", "Config file to use")
-	flag.StringVar(&f.LogFileName, "logfile", "logunify.log", "Log file to write to")
-	flag.BoolVar(&f.Replay, "replay", false, "Replay a stored log file")
-	flag.BoolVar(&f.Realtime, "realtime", false, "Replay a stored log file in real time")
-	flag.BoolVar(&f.Listen, "listen", false, "Listen to incoming connections")
+	flag.StringVar(&f.ConfigFileName, "config", "./logunify.yaml", "Config file to use.")
+	flag.StringVar(&f.LogFileName, "logfile", "logunify.log", "Log file to write to.")
+	flag.BoolVar(&f.Replay, "replay", false, "Replay a stored log file.")
+	flag.BoolVar(&f.Realtime, "realtime", false, "Replay in real time (including pauses).")
+	flag.BoolVar(&f.Listen, "listen", false, "Listen to incoming connections. Format: [addr]:<port>")
 	flag.IntVar(&f.MaxLines, "maxlines", 500, "Maximum lines in UI buffer. 0 for unlimited scrollback.")
 	flag.BoolVar(&f.NoUI, "noui", false, "Disable UI, just log data.")
 
-	flag.StringVar(&remote, "remote", "", "Remote to connect to")
-	flag.IntVar(&port, "port", 20000, "Port to use when logging over TCP")
+	flag.StringVar(&remote, "remote", "", "Remote to connect to. Format: <addr>:<port>")
+	flag.IntVar(&port, "port", 20000, "Port to use when logging over TCP.")
 	flag.BoolVar(&printversion, "version", false, "Print the program version.")
 
 	flag.Parse()
