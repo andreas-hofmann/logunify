@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+var version string = "undefined"
+
 type Flags struct {
 	ConfigFileName string
 	LogFileName    string
@@ -19,7 +21,9 @@ type Flags struct {
 	MaxLines       int
 }
 
-var version string = "undefined"
+func (f Flags) writeLogFile() bool {
+	return !f.Replay || len(f.Remote) > 0
+}
 
 func parseFlags() Flags {
 	var f Flags
@@ -57,7 +61,6 @@ When replaying, scrollback is always set to unlimited.`)
 
 	if f.Listen {
 		f.Replay = true
-		f.Realtime = true
 		connect = true
 	}
 
@@ -81,7 +84,7 @@ func main() {
 	// First off, parse command line arguments
 	flags := parseFlags()
 
-	logfile := NewLogFile(flags.LogFileName, !flags.Replay)
+	logfile := NewLogFile(flags.LogFileName, flags.writeLogFile())
 	defer logfile.Close()
 
 	logremote := NewLogRemote(flags.Remote, !flags.Replay)
@@ -109,7 +112,15 @@ func main() {
 	ctx := context.Background()
 	defer ctx.Done()
 
-	if !flags.Replay {
+	if flags.Replay {
+		if len(flags.Remote) > 0 {
+			logremote.Replay(logchan, flags.Realtime)
+		} else {
+			logfile.Replay(logchan, flags.Realtime)
+		}
+
+		logremote.Replay(logchan, flags.Realtime)
+	} else {
 		// We're not replaying. Write out the config, before starting anything else.
 		logfile.WriteCfg(cfg)
 		logremote.WriteCfg(cfg)
@@ -119,22 +130,21 @@ func main() {
 			go RunCmd(ctx, c, col, logchan)
 			col++
 		}
-	} else {
-		logfile.Replay(logchan, flags.Realtime)
-		logremote.Replay(logchan, flags.Realtime)
 	}
 
 	// Receive log data in the background and send it to logfile + views
 	go func() {
 		for l := range logchan {
 			if !flags.Replay {
-				logfile.Write(l)
 				logremote.Write(l)
+			}
+			if flags.writeLogFile() {
+				logfile.Write(l)
 			}
 
 			ui.AddData(l)
 
-			if !flags.Replay || flags.Realtime {
+			if flags.writeLogFile() || flags.Realtime {
 				ui.Update()
 			}
 		}
