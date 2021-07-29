@@ -13,6 +13,8 @@ type Flags struct {
 	Port           int
 	Listen         bool
 	Connect        bool
+	NoUI           bool
+	MaxLines       int
 }
 
 func ParseFlags() Flags {
@@ -25,6 +27,8 @@ func ParseFlags() Flags {
 	flag.IntVar(&f.Port, "port", 20000, "Port to use when logging over TCP")
 	flag.BoolVar(&f.Listen, "listen", false, "Listen to incoming connections")
 	flag.StringVar(&f.Remote, "remote", "", "Remote to connect to")
+	flag.IntVar(&f.MaxLines, "maxlines", 500, "Maximum lines in UI buffer. 0 for unlimited scrollback.")
+	flag.BoolVar(&f.NoUI, "noui", false, "Disable UI, just log data.")
 
 	flag.Parse()
 
@@ -32,6 +36,10 @@ func ParseFlags() Flags {
 
 	if !f.Listen && len(f.Remote) <= 0 {
 		f.Port = 0
+	}
+
+	if f.MaxLines < 0 {
+		f.MaxLines = 0
 	}
 
 	if f.Listen {

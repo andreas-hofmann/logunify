@@ -16,15 +16,19 @@ type TUI struct {
 	tview      *tview.TextView
 }
 
-func newTextView(text string) tview.Primitive {
+func newTextView(text string, maxlines int) tview.Primitive {
 	return tview.NewTextView().
 		SetTextAlign(tview.AlignLeft).
 		SetText(text).
-		SetWrap(false)
+		SetWrap(false).SetMaxLines(maxlines)
 }
 
 func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 	var tui TUI
+
+	if flags.NoUI {
+		return tui
+	}
 
 	tui.grid = tview.NewGrid().
 		SetBorders(true).
@@ -35,10 +39,10 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 	col := 1
 	for _, c := range cfg {
 		// Add header
-		tui.grid.AddItem(newTextView(c.Cmd), 0, col, 1, 1, 0, 0, false)
+		tui.grid.AddItem(newTextView(c.Cmd, flags.MaxLines), 0, col, 1, 1, 0, 0, false)
 
 		// Add cmd output
-		p := newTextView("")
+		p := newTextView("", flags.MaxLines)
 		tui.primitives = append(tui.primitives, p)
 		tui.grid.AddItem(p, 1, col, 1, 1, 0, 0, false)
 
@@ -46,8 +50,8 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 	}
 
 	// Add timestamp + header in first column
-	timeview := newTextView("")
-	tui.grid.AddItem(newTextView("Time"), 0, 0, 1, 1, 0, 0, false)
+	timeview := newTextView("", flags.MaxLines)
+	tui.grid.AddItem(newTextView("Time", flags.MaxLines), 0, 0, 1, 1, 0, 0, false)
 	tui.grid.AddItem(timeview, 1, 0, 1, 1, 0, 0, false)
 
 	tView, ok := timeview.(*tview.TextView)
@@ -87,6 +91,10 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 }
 
 func (t TUI) AddData(data LogEntry) {
+	if t.app == nil {
+		return
+	}
+
 	newlines := ""
 
 	for i := 0; i < strings.Count(data.Text, "\n"); i++ {
@@ -110,12 +118,26 @@ func (t TUI) AddData(data LogEntry) {
 }
 
 func (t TUI) Update() {
+	if t.app == nil {
+		return
+	}
+
 	t.app.Draw()
 }
 
 func (t TUI) Run() {
-	// Fire up the tview event loop
-	if err := t.app.Run(); err != nil {
-		log.Panic(err)
+	if t.app == nil {
+		log.Println("Logging data...")
+		defer log.Println("...Done.")
+
+		for {
+			time.Sleep(30 * time.Second)
+			log.Println("...still logging...")
+		}
+	} else {
+		// Fire up the tview event loop
+		if err := t.app.Run(); err != nil {
+			log.Panic(err)
+		}
 	}
 }
