@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 type Flags struct {
@@ -16,11 +17,14 @@ type Flags struct {
 	MaxLines       int
 }
 
+var version string = "undefined"
+
 func ParseFlags() Flags {
 	var f Flags
 
 	var remote string
 	var port int
+	var printversion bool
 
 	flag.StringVar(&f.ConfigFileName, "config", "./logunify.yaml", "Config file to use")
 	flag.StringVar(&f.LogFileName, "logfile", "logunify.log", "Log file to write to")
@@ -32,8 +36,14 @@ func ParseFlags() Flags {
 
 	flag.StringVar(&remote, "remote", "", "Remote to connect to")
 	flag.IntVar(&port, "port", 20000, "Port to use when logging over TCP")
+	flag.BoolVar(&printversion, "version", false, "Print the program version.")
 
 	flag.Parse()
+
+	if printversion {
+		fmt.Println("logunify version: ", version)
+		os.Exit(0)
+	}
 
 	connect := false
 
