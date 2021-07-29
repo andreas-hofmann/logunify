@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 )
 
 func main() {
@@ -13,12 +12,7 @@ func main() {
 	logging := NewLogFile(flags.LogFileName, !flags.Replay)
 	defer logging.Close()
 
-	peer := ""
-	if flags.Connect {
-		peer = flags.Remote + ":" + fmt.Sprint(flags.Port)
-	}
-
-	remote := NewLogRemote(peer, !flags.Replay)
+	remote := NewLogRemote(flags.Remote, !flags.Replay)
 	defer remote.Close()
 
 	// Set up a context, to allwo terminating background processes
