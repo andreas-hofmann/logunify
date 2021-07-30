@@ -15,35 +15,44 @@ type ConfigParameters struct {
 
 type ConfigMap map[string]ConfigParameters
 
+type Config struct {
+	Init map[string]ConfigParameters `yaml:"init"`
+	Run  map[string]ConfigParameters `yaml:"runtime"`
+}
+
 type CmdConfig struct {
 	Cmd    string
 	Params ConfigParameters
 }
 
-func ReadConfig(flags Flags) (config []CmdConfig) {
+func ReadConfig(flags Flags) (config []CmdConfig, init []string) {
 	cfgfile, err := ioutil.ReadFile(flags.ConfigFileName)
 	if err != nil {
 		log.Fatal("Error reading config: ", err.Error())
 	}
 
-	cfg := make(ConfigMap)
+	cfg := Config{}
 
 	err = yaml.Unmarshal(cfgfile, &cfg)
 	if err != nil {
 		log.Fatal("Error parsing config: ", err.Error())
 	}
 
-	sortedkeys := make([]string, 0, len(cfg))
+	sortedkeys := make([]string, 0, len(cfg.Run))
+	initcmds := make([]string, 0, len(cfg.Init))
 
-	for k := range cfg {
+	for k := range cfg.Run {
 		sortedkeys = append(sortedkeys, k)
+	}
+	for k := range cfg.Init {
+		initcmds = append(initcmds, k)
 	}
 
 	sort.Strings(sortedkeys)
 
 	for _, k := range sortedkeys {
-		config = append(config, CmdConfig{k, cfg[k]})
+		config = append(config, CmdConfig{k, cfg.Run[k]})
 	}
 
-	return config
+	return config, initcmds
 }

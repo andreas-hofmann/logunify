@@ -90,13 +90,15 @@ func main() {
 	logremote := NewLogRemote(flags.Remote, !flags.Replay)
 	defer logremote.Close()
 
+	var initCmds []string
+
 	// Try to read cmd config from all available channels.
 	cfg := logfile.ReadCfg()
 	if len(cfg) == 0 {
 		cfg = logremote.ReadCfg()
 	}
 	if len(cfg) == 0 {
-		cfg = ReadConfig(flags)
+		cfg, initCmds = ReadConfig(flags)
 	}
 	if len(cfg) == 0 {
 		log.Fatal("Could not read cmd-config!")
@@ -124,6 +126,12 @@ func main() {
 		// We're not replaying. Write out the config, before starting anything else.
 		logfile.WriteCfg(cfg)
 		logremote.WriteCfg(cfg)
+
+		for _, c := range initCmds {
+			if err := RunInitCmd(c); err != nil {
+				log.Fatal("Failed to run init cmd", c, ":", err)
+			}
+		}
 
 		col := 1
 		for _, c := range cfg {

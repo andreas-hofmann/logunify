@@ -27,6 +27,17 @@ func getShell() []string {
 	return []string{}
 }
 
+func RunInitCmd(cmd string) error {
+	var executable []string
+
+	executable = append(executable, getShell()...)
+	executable = append(executable, cmd)
+
+	c := exec.Command(executable[0], executable[1:]...)
+
+	return c.Run()
+}
+
 func RunCmd(ctx context.Context, cmd CmdConfig, col int, output chan LogEntry) {
 	var executable []string
 	executable = append(executable, getShell()...)

@@ -1,9 +1,13 @@
-ls -l / | head -n 1:
-  intervalMs: 2000
-  loop: True
+init:
+  dmesg -C:
 
-ls -l /tmp | head -n 3:
-  loop: True
-  intervalMs: 1500
+runtime:
+  ls -l / | head -n 1:
+    intervalMs: 2000
+    loop: True
 
-/bin/dmesg -w:
+  ls -l /tmp | head -n 3:
+    loop: True
+    intervalMs: 1500
+
+  /bin/dmesg -w:
