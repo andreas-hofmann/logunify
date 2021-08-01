@@ -120,8 +120,6 @@ func main() {
 		} else {
 			logfile.Replay(logchan, flags.Realtime)
 		}
-
-		logremote.Replay(logchan, flags.Realtime)
 	} else {
 		// We're not replaying. Write out the config, before starting anything else.
 		logfile.WriteCfg(cfg)
