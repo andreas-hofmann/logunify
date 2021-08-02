@@ -1,0 +1,18 @@
+flags:
+  address: 192.168.0.10
+  connect: true
+  ui: false
+
+init:
+  sudo dmesg -C:
+
+runtime:
+  ls -l / | head -n 1:
+    intervalMs: 2000
+    loop: True
+
+  ls -l /tmp | head -n 3:
+    loop: True
+    intervalMs: 1500
+
+  /bin/dmesg -w:
