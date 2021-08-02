@@ -10,15 +10,15 @@ import (
 type Flags struct {
 	ConfigFileName string
 	LogFileName    string
+	SplitLogFiles  bool
 	UI             bool
-	Replay         bool
+	MaxLines       int
 	Realtime       bool
+	Replay         bool
 	Listen         bool
 	Connect        bool
-	SplitLogFiles  bool
 	Addr           string
 	Port           int
-	MaxLines       int
 }
 
 func parseFlags() Flags {
@@ -29,13 +29,12 @@ func parseFlags() Flags {
 	flag.StringVar(&f.ConfigFileName, "config", "./logunify.yaml", `Config file to use. Only required when recording,
 not for replaying.`)
 	flag.StringVar(&f.LogFileName, "logfile", "", "Log file to write to.")
-	flag.BoolVar(&f.SplitLogFiles, "splitlog", false, "Split log output to separate logfiles.")
-	flag.BoolVar(&f.Replay, "replay", false, "Replay a stored log file.")
+	flag.BoolVar(&f.SplitLogFiles, "splitlog", false, "Split log output to separate logfiles (one per command).")
+	flag.BoolVar(&f.Replay, "replay", false, "Replay log data from a file or remote.")
 	flag.BoolVar(&f.Realtime, "realtime", false, "Replay in real time (including pauses).")
 	flag.BoolVar(&f.Listen, "listen", false, "Listen for incoming connections.")
-	flag.IntVar(&f.MaxLines, "maxlines", 500, `Maximum lines in UI buffer. 0 for unlimited scrollback."
-When replaying, scrollback is always set to unlimited.`)
-	flag.BoolVar(&f.UI, "ui", false, "Enable UI, just log data.")
+	flag.IntVar(&f.MaxLines, "maxlines", 500, "Maximum lines in UI buffer. 0 for unlimited scrollback.")
+	flag.BoolVar(&f.UI, "ui", false, "Enable UI. Implied if neither a remote, nor a logfile is given.")
 	flag.BoolVar(&f.Connect, "connect", false, "Connect to a remote host.")
 	flag.StringVar(&f.Addr, "address", "", "Address to connect/bind to.")
 	flag.IntVar(&f.Port, "port", 20000, "Port to use when logging over TCP.")
@@ -53,8 +52,8 @@ When replaying, scrollback is always set to unlimited.`)
 		f.MaxLines = 0
 	}
 
-	if f.Replay {
-		f.MaxLines = 0
+	if !(f.logfile() || f.remoteConnection()) {
+		f.UI = true
 	}
 
 	return f
@@ -115,6 +114,10 @@ func (f Flags) writeLogFile() bool {
 	return !f.Replay || f.remoteConnection()
 }
 
+func (f Flags) writeLogRemote() bool {
+	return !f.Replay && f.remoteConnection()
+}
+
 func (f Flags) remoteAddr() string {
 	if f.remoteConnection() {
 		return f.Addr + ":" + fmt.Sprint(f.Port)
@@ -124,4 +127,8 @@ func (f Flags) remoteAddr() string {
 
 func (f Flags) remoteConnection() bool {
 	return f.Connect || f.Listen
+}
+
+func (f Flags) logfile() bool {
+	return len(f.LogFileName) > 0
 }

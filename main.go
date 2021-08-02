@@ -88,7 +88,7 @@ func main() {
 	// Receive log data in the background and send it to logfile + views
 	recvfunc := func() {
 		for l := range logchan {
-			if !flags.Replay && flags.remoteConnection() {
+			if flags.writeLogRemote() {
 				logremote.Write(l)
 			}
 			if flags.writeLogFile() {
