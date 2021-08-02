@@ -21,6 +21,23 @@ type DataLog struct {
 	reader *gob.Decoder
 }
 
+func (l DataLog) WriteVersion(version string) {
+	if l.writer == nil {
+		return
+	}
+
+	l.writer.Encode(version)
+}
+
+func (l DataLog) ReadVersion() (version string) {
+	if l.reader == nil {
+		return ""
+	}
+
+	l.reader.Decode(&version)
+	return
+}
+
 func (l DataLog) WriteCfg(cfg []CmdConfig) {
 	if l.writer == nil {
 		return
