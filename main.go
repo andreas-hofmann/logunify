@@ -24,13 +24,21 @@ func main() {
 	defer logremote.Close()
 
 	if flags.Replay {
+		var logversion string = "undefined"
+
 		// Try to read cmd config from all available channels.
 		if flags.remoteConnection() {
+			logversion = logremote.ReadVersion()
 			log.Println("Reading cmd-config from remote.")
 			cfg = logremote.ReadCfg(cfg)
 		} else {
+			logversion = logfile.ReadVersion()
 			log.Println("Reading cmd-config from logfile.")
 			cfg = logfile.ReadCfg(cfg)
+		}
+
+		if version != logversion {
+			log.Printf("Warning: Log was written with a different version (%s)!\n", logversion)
 		}
 	}
 
@@ -62,16 +70,10 @@ func main() {
 	defer ctx.Done()
 
 	if flags.Replay {
-		var logversion string = "undefined"
 		if flags.remoteConnection() {
-			logversion = logremote.ReadVersion()
 			go logremote.Replay(logchan, flags.Realtime)
 		} else {
-			logversion = logfile.ReadVersion()
 			go logfile.Replay(logchan, flags.Realtime)
-		}
-		if version != logversion {
-			log.Printf("Warning: Log was written with a different version (%s)!\n", logversion)
 		}
 	} else {
 		// We're not replaying. Write out the version + config, before starting anything else.
