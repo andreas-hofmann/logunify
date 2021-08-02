@@ -38,7 +38,17 @@ func main() {
 		log.Fatal("Could not read cmd-config! -replay flag missing?")
 	}
 
-	var ui TUI
+	var logsplitter *SplitLog
+
+	if flags.SplitLogFiles {
+		logsplitter = NewSplitLog(flags.LogFileName, cfg)
+		defer logsplitter.Close()
+		if !flags.UI {
+			log.Println("Splitting logfile...")
+		}
+	}
+
+	var ui *TUI
 
 	if flags.UI {
 		ui = InitTUI(cfg, flags.MaxLines)
@@ -53,9 +63,9 @@ func main() {
 
 	if flags.Replay {
 		if flags.remoteConnection() {
-			logremote.Replay(logchan, flags.Realtime)
+			go logremote.Replay(logchan, flags.Realtime)
 		} else {
-			logfile.Replay(logchan, flags.Realtime)
+			go logfile.Replay(logchan, flags.Realtime)
 		}
 	} else {
 		// We're not replaying. Write out the config, before starting anything else.
@@ -76,7 +86,7 @@ func main() {
 	}
 
 	// Receive log data in the background and send it to logfile + views
-	go func() {
+	recvfunc := func() {
 		for l := range logchan {
 			if !flags.Replay && flags.remoteConnection() {
 				logremote.Write(l)
@@ -85,15 +95,30 @@ func main() {
 				logfile.Write(l)
 			}
 
-			ui.AddData(l)
+			if logsplitter != nil {
+				logsplitter.Write(l)
+			}
 
-			if flags.writeLogFile() || flags.Realtime {
-				ui.Update()
+			if ui != nil {
+				ui.AddData(l)
+				if flags.writeLogFile() || flags.Realtime {
+					ui.Update()
+				}
 			}
 		}
 
-		ui.Update()
-	}()
+		if ui != nil {
+			ui.Update()
+		} else {
+			log.Println("Done.")
+		}
+	}
 
-	ui.Run()
+	if ui != nil {
+		go recvfunc()
+		ui.Run()
+	} else {
+		recvfunc()
+	}
+
 }

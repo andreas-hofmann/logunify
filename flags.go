@@ -15,6 +15,7 @@ type Flags struct {
 	Realtime       bool
 	Listen         bool
 	Connect        bool
+	SplitLogFiles  bool
 	Addr           string
 	Port           int
 	MaxLines       int
@@ -28,6 +29,7 @@ func parseFlags() Flags {
 	flag.StringVar(&f.ConfigFileName, "config", "./logunify.yaml", `Config file to use. Only required when recording,
 not for replaying.`)
 	flag.StringVar(&f.LogFileName, "logfile", "", "Log file to write to.")
+	flag.BoolVar(&f.SplitLogFiles, "splitlog", false, "Split log output to separate logfiles.")
 	flag.BoolVar(&f.Replay, "replay", false, "Replay a stored log file.")
 	flag.BoolVar(&f.Realtime, "realtime", false, "Replay in real time (including pauses).")
 	flag.BoolVar(&f.Listen, "listen", false, "Listen for incoming connections.")
@@ -75,6 +77,8 @@ func (flags *Flags) update(flagmap map[string]string) {
 			flags.Listen = v == "true"
 		case "connect":
 			flags.Connect = v == "true"
+		case "splitlog":
+			flags.SplitLogFiles = v == "true"
 		case "addr":
 			flags.Addr = v
 		case "port":

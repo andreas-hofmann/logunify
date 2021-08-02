@@ -60,31 +60,29 @@ func (l DataLog) Replay(ch chan LogEntry, realtime bool) {
 		return
 	}
 
-	go func() {
-		var lastTime time.Time
-		initialized := false
+	var lastTime time.Time
+	initialized := false
 
-		for {
-			var entry LogEntry
+	for {
+		var entry LogEntry
 
-			if err := l.reader.Decode(&entry); err != nil {
-				break
-			}
-
-			if realtime {
-				if !initialized {
-					initialized = true
-					lastTime = entry.Ts
-				} else {
-					time.Sleep(entry.Ts.Sub(lastTime))
-					lastTime = entry.Ts
-				}
-			}
-
-			ch <- entry
+		if err := l.reader.Decode(&entry); err != nil {
+			break
 		}
-		close(ch)
-	}()
+
+		if realtime {
+			if !initialized {
+				initialized = true
+				lastTime = entry.Ts
+			} else {
+				time.Sleep(entry.Ts.Sub(lastTime))
+				lastTime = entry.Ts
+			}
+		}
+
+		ch <- entry
+	}
+	close(ch)
 }
 
 func (l DataLog) Close() {

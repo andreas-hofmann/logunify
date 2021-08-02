@@ -23,7 +23,7 @@ func newTextView(text string, maxlines int) tview.Primitive {
 		SetWrap(false).SetMaxLines(maxlines)
 }
 
-func InitTUI(cfg []CmdConfig, maxlines int) TUI {
+func InitTUI(cfg []CmdConfig, maxlines int) *TUI {
 	var tui TUI
 
 	tui.grid = tview.NewGrid().
@@ -83,7 +83,7 @@ func InitTUI(cfg []CmdConfig, maxlines int) TUI {
 
 	tui.app = tview.NewApplication().SetRoot(tui.grid, true).EnableMouse(false)
 
-	return tui
+	return &tui
 }
 
 func (t TUI) AddData(data LogEntry) {
@@ -123,17 +123,11 @@ func (t TUI) Update() {
 
 func (t TUI) Run() {
 	if t.app == nil {
-		log.Println("Logging data...")
-		defer log.Println("...Done.")
+		return
+	}
 
-		for {
-			time.Sleep(30 * time.Second)
-			log.Println("...still logging...")
-		}
-	} else {
-		// Fire up the tview event loop
-		if err := t.app.Run(); err != nil {
-			log.Panic(err)
-		}
+	// Fire up the tview event loop
+	if err := t.app.Run(); err != nil {
+		log.Panic(err)
 	}
 }
