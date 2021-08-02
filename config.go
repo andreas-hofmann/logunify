@@ -16,8 +16,9 @@ type ConfigParameters struct {
 type ConfigMap map[string]ConfigParameters
 
 type Config struct {
-	Init map[string]ConfigParameters `yaml:"init"`
-	Run  map[string]ConfigParameters `yaml:"runtime"`
+	Flags map[string]string           `yaml:"flags"`
+	Init  map[string]ConfigParameters `yaml:"init"`
+	Run   map[string]ConfigParameters `yaml:"runtime"`
 }
 
 type CmdConfig struct {
@@ -25,7 +26,7 @@ type CmdConfig struct {
 	Params ConfigParameters
 }
 
-func ReadConfig(flags Flags) (config []CmdConfig, init []string) {
+func ReadConfig(flags Flags) (config []CmdConfig, init []string, fl Flags) {
 	cfgfile, err := ioutil.ReadFile(flags.ConfigFileName)
 	if err != nil {
 		log.Fatal("Error reading config: ", err.Error())
@@ -54,5 +55,7 @@ func ReadConfig(flags Flags) (config []CmdConfig, init []string) {
 		config = append(config, CmdConfig{k, cfg.Run[k]})
 	}
 
-	return config, initcmds
+	flags.update(cfg.Flags)
+
+	return config, initcmds, flags
 }

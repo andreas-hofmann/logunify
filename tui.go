@@ -23,12 +23,8 @@ func newTextView(text string, maxlines int) tview.Primitive {
 		SetWrap(false).SetMaxLines(maxlines)
 }
 
-func InitTUI(flags Flags, cfg []CmdConfig) TUI {
+func InitTUI(cfg []CmdConfig, maxlines int) TUI {
 	var tui TUI
-
-	if flags.NoUI {
-		return tui
-	}
 
 	tui.grid = tview.NewGrid().
 		SetBorders(true).
@@ -39,10 +35,10 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 	col := 1
 	for _, c := range cfg {
 		// Add header
-		tui.grid.AddItem(newTextView(c.Cmd, flags.MaxLines), 0, col, 1, 1, 0, 0, false)
+		tui.grid.AddItem(newTextView(c.Cmd, maxlines), 0, col, 1, 1, 0, 0, false)
 
 		// Add cmd output
-		p := newTextView("", flags.MaxLines)
+		p := newTextView("", maxlines)
 		tui.primitives = append(tui.primitives, p)
 		tui.grid.AddItem(p, 1, col, 1, 1, 0, 0, false)
 
@@ -50,8 +46,8 @@ func InitTUI(flags Flags, cfg []CmdConfig) TUI {
 	}
 
 	// Add timestamp + header in first column
-	timeview := newTextView("", flags.MaxLines)
-	tui.grid.AddItem(newTextView("Time", flags.MaxLines), 0, 0, 1, 1, 0, 0, false)
+	timeview := newTextView("", maxlines)
+	tui.grid.AddItem(newTextView("Time", maxlines), 0, 0, 1, 1, 0, 0, false)
 	tui.grid.AddItem(timeview, 1, 0, 1, 1, 0, 0, false)
 
 	tView, ok := timeview.(*tview.TextView)

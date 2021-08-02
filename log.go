@@ -31,7 +31,7 @@ func (l DataLog) WriteCfg(cfg []CmdConfig) {
 	}
 }
 
-func (l DataLog) ReadCfg() (cfg []CmdConfig) {
+func (l DataLog) ReadCfg(cfg []CmdConfig) []CmdConfig {
 	if l.reader == nil {
 		return cfg
 	}
@@ -105,28 +105,24 @@ func NewLogFile(filename string, write bool) (l DataLog) {
 		log.Fatal("Could not open logfile: ", err.Error())
 	}
 
-	if write {
-		l.writer = gob.NewEncoder(l.handle)
-	} else {
-		l.reader = gob.NewDecoder(l.handle)
-	}
+	l.writer = gob.NewEncoder(l.handle)
+	l.reader = gob.NewDecoder(l.handle)
 
 	return
 }
 
-func NewLogRemote(peer string, write bool) (l DataLog) {
+func NewLogRemote(peer string, connect bool) (l DataLog) {
 	if len(peer) <= 0 {
 		return
 	}
 
 	var err error
 
-	if write {
+	if connect {
 		log.Println("Connecting to", peer)
 		for {
 			l.handle, err = net.Dial("tcp", peer)
 			if err == nil {
-				l.writer = gob.NewEncoder(l.handle)
 				break
 			}
 			time.Sleep(time.Second * 2)
@@ -144,8 +140,10 @@ func NewLogRemote(peer string, write bool) (l DataLog) {
 		if err != nil {
 			log.Fatal("Error accepting connection: ", err.Error())
 		}
-		l.reader = gob.NewDecoder(l.handle)
 	}
+
+	l.writer = gob.NewEncoder(l.handle)
+	l.reader = gob.NewDecoder(l.handle)
 
 	return
 }
