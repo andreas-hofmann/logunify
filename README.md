@@ -2,11 +2,7 @@
 
 A small tool, which allows running multiple shellcommands in parallel, and log their output to a unified logfile. The logged data can be replayed later.
 
-To use it, edit the included config.yaml file, and add your commands.
-
-Available config parameters:
- - `loop: [true|false]` -> Run the command in an endless loop.
- - `intervalMs: <milliseconds>` -> Interval between looped command executions.
+To use it, take one of the included config files, and add your commands, and tweak it to your needs.
 
 You only need the yaml config when running commands. For replaying, a logfile is sufficient. If your device is short on storage space, sending out the log data over a TCP connection is supported, too.
 
