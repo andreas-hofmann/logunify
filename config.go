@@ -29,7 +29,7 @@ type CmdConfig struct {
 func ReadConfig(flags Flags) (config []CmdConfig, init []string, fl Flags) {
 	cfgfile, err := ioutil.ReadFile(flags.ConfigFileName)
 	if err != nil {
-		log.Fatal("Error reading config: ", err.Error())
+		return
 	}
 
 	cfg := Config{}
