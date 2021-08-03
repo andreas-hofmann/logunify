@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 )
 
@@ -95,6 +96,22 @@ func main() {
 		}
 	}
 
+	spincnt := 0
+	spinfunc := func() {
+		spincnt++
+		switch spincnt {
+		case 0:
+			fmt.Print("\r-")
+		case 3:
+			fmt.Print("\r\\")
+		case 6:
+			fmt.Print("\r|")
+		case 9:
+			fmt.Print("\r/")
+			spincnt = 0
+		}
+	}
+
 	// Receive log data in the background and send it to logfile + views
 	recvfunc := func() {
 		for l := range logchan {
@@ -114,12 +131,15 @@ func main() {
 				if flags.writeLogFile() || flags.Realtime {
 					ui.Update()
 				}
+			} else {
+				spinfunc()
 			}
 		}
 
 		if ui != nil {
 			ui.Update()
 		} else {
+			fmt.Print("\n")
 			log.Println("Done.")
 		}
 	}
