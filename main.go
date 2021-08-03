@@ -14,7 +14,7 @@ func main() {
 
 	cfg, initCmds, flags := ReadConfig(flags)
 
-	if err := flags.valid(); err != nil {
+	if err := flags.checkError(); err != nil {
 		log.Fatal("Invalid parameters: ", err.Error())
 	}
 

@@ -102,7 +102,7 @@ func (flags *Flags) update(flagmap map[string]string) {
 	}
 }
 
-func (flags Flags) valid() error {
+func (flags Flags) checkError() error {
 	if flags.Listen && flags.Connect {
 		return FlagError{"Can only -listen or -connect"}
 	}
@@ -115,7 +115,7 @@ func (flags Flags) valid() error {
 		return FlagError{"Invalid maxlines"}
 	}
 
-	if flags.SplitLogFiles && len(flags.LogFileName) <= 0 {
+	if flags.SplitLogFiles && !flags.logfile() {
 		return FlagError{"Logfile required when splitting log"}
 	}
 
