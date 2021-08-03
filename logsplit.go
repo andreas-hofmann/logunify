@@ -21,10 +21,11 @@ func NewSplitLog(filename string, cfg []CmdConfig) *SplitLog {
 
 	l.prefix = filename
 
-	for c := range cfg {
-		handle, err := os.Create(l.prefix + "." + fmt.Sprintf("%d", c))
+	for i, c := range cfg {
+		handle, err := os.Create(l.prefix + "." + fmt.Sprintf("%d", i))
 		if err == nil {
 			l.handles = append(l.handles, handle)
+			handle.Write([]byte(fmt.Sprintf("CMD: %s\n  Interval: %d\n  Loop: %v\n", c.Cmd, c.Params.IntervalMs, c.Params.Loop)))
 		}
 	}
 
