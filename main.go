@@ -13,8 +13,8 @@ func main() {
 
 	cfg, initCmds, flags := ReadConfig(flags)
 
-	if !flags.valid() {
-		log.Fatal("Invalid config.")
+	if err := flags.valid(); err != nil {
+		log.Fatal("Invalid parameters: ", err.Error())
 	}
 
 	logfile := NewLogFile(flags.LogFileName, flags.writeLogFile())

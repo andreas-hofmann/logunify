@@ -21,6 +21,14 @@ type Flags struct {
 	Port           int
 }
 
+type FlagError struct {
+	err string
+}
+
+func (e FlagError) Error() string {
+	return e.err
+}
+
 func parseFlags() Flags {
 	var f Flags
 
@@ -94,20 +102,24 @@ func (flags *Flags) update(flagmap map[string]string) {
 	}
 }
 
-func (flags Flags) valid() bool {
+func (flags Flags) valid() error {
 	if flags.Listen && flags.Connect {
-		return false
+		return FlagError{"Can only -listen or -connect"}
 	}
 
 	if flags.Port <= 0 {
-		return false
+		return FlagError{"Invalid port"}
 	}
 
 	if flags.MaxLines < 0 {
-		return false
+		return FlagError{"Invalid maxlines"}
 	}
 
-	return true
+	if flags.SplitLogFiles && len(flags.LogFileName) <= 0 {
+		return FlagError{"Logfile required when splitting log"}
+	}
+
+	return nil
 }
 
 func (f Flags) writeLogFile() bool {
