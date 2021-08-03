@@ -19,3 +19,4 @@
 
 # Finally, ignore the binary itself.
 logunify
+logunify_android
