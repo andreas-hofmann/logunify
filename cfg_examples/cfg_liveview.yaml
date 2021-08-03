@@ -1,10 +1,8 @@
 flags:
-  address: 192.168.0.10
-  connect: true
-  ui: false
+  ui: true
 
 init:
-  dmesg -C:
+  echo "I'm just running once!":
 
 runtime:
   ls -l / | head -n 1:
