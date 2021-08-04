@@ -71,6 +71,11 @@ func main() {
 	defer ctx.Done()
 
 	if flags.Replay {
+		if flags.writeLogFile() {
+			logfile.WriteVersion(version)
+			logfile.WriteCfg(cfg)
+		}
+
 		if flags.remoteConnection() {
 			go logremote.Replay(logchan, flags.Realtime)
 		} else {
