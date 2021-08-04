@@ -77,11 +77,27 @@ func InitTUI(cfg []CmdConfig, maxlines int) *TUI {
 
 			return event
 		}
-
 		tv.SetInputCapture(inputwrapper)
+
+		mousewrapper := func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+			row, _ := tv.GetScrollOffset()
+
+			switch action {
+			case tview.MouseScrollDown, tview.MouseScrollUp:
+				for _, tv2 := range allPrimitives {
+					tv2 := tv2.(*tview.TextView)
+					_, col := tv2.GetScrollOffset()
+					tv2.ScrollTo(row, col)
+				}
+			}
+
+			return action, event
+		}
+
+		tv.SetMouseCapture(mousewrapper)
 	}
 
-	tui.app = tview.NewApplication().SetRoot(tui.grid, true).EnableMouse(false)
+	tui.app = tview.NewApplication().SetRoot(tui.grid, true).EnableMouse(true)
 
 	return &tui
 }
