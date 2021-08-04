@@ -11,6 +11,7 @@ This was created from the need to gather debugging info on an Android system, bu
 ## Config file
 
 The config file has three sections:
+
 * *flags*
 * *init*
 * *runtime*
@@ -20,13 +21,18 @@ The *flags* section allows setting (or overriding) the command line flags, which
 The *init* section contains shell-commands, which are run once before logging starts. Enabling log-messages, clearing buffers, etc. can be done here.
 
 The *runtime* section contains all commands, which shall be used to collect log info. Available options are:
+
 * _loop_: {True|False} - Run the command in an endless loop
-* _intervalMs_: <milliseconds> - Sleep time between looped calls
+* _intervalMs_: \<milliseconds\> - Sleep time between looped calls
 
 Note that each command must end with a colon, even when no options are supplied.
 See the included example configs for a starting point.
 
 ## Some usage examples:
+
+Load a connect config, send logdata to the remote and additionally write a local logfile.
+
+    ./logunify -config cfg_examples/cfg_connect.yaml -logfile local.log
 
 Listen for connections + display received data via TUI:
 
