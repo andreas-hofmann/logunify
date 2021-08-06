@@ -84,6 +84,9 @@ func (l DataLog) Replay(ch chan LogEntry, realtime bool) {
 		var entry LogEntry
 
 		if err := l.reader.Decode(&entry); err != nil {
+			if err != io.EOF {
+				log.Println("Error while reading file:", err)
+			}
 			break
 		}
 
